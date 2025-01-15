@@ -1,0 +1,152 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model Category {
+  id          Int       @id @default(autoincrement())
+  name        String    @unique
+  description String?
+  products    Product[]
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+
+  @@map("categories")
+}
+
+model Product {
+  id            Int             @id @default(autoincrement())
+  code          String          @unique
+  name          String
+  purchasePrice Float
+  salePrice     Float
+  stock         Int             @default(0)
+  minStock      Int             @default(5)
+  categoryId    Int
+  category      Category        @relation(fields: [categoryId], references: [id])
+  createdAt     DateTime        @default(now())
+  updatedAt     DateTime        @updatedAt
+  saleDetails   SaleDetail[]
+  purchaseDetails PurchaseDetail[] // Añadimos esta línea
+
+  @@map("products")
+}
+
+model Sale {
+  id            Int          @id @default(autoincrement())
+  saleNumber    String       @unique @default(uuid())
+  total         Float
+  status        SaleStatus   @default(COMPLETED)
+  paymentMethod PaymentMethod
+  details       SaleDetail[]
+  createdAt     DateTime     @default(now())
+  updatedAt     DateTime     @updatedAt
+
+  @@map("sales")
+}
+
+model SaleDetail {
+  id        Int      @id @default(autoincrement())
+  saleId    Int
+  sale      Sale     @relation(fields: [saleId], references: [id])
+  productId Int
+  product   Product  @relation(fields: [productId], references: [id])
+  quantity  Int
+  price     Float
+  subtotal  Float
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@map("sale_details")
+}
+
+model User {
+  id        Int      @id @default(autoincrement())
+  username  String   @unique
+  password  String
+  name      String
+  role      Role     @default(SELLER)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@map("users")
+}
+
+model BlacklistedToken {
+  id        Int      @id @default(autoincrement())
+  token     String   @unique
+  createdAt DateTime @default(now())
+  expiresAt DateTime
+
+  @@map("blacklisted_tokens")
+}
+
+model Purchase {
+  id            Int             @id @default(autoincrement())
+  documentNumber String         @unique
+  supplierId    Int
+  supplier      Supplier        @relation(fields: [supplierId], references: [id])
+  total         Float
+  status        PurchaseStatus  @default(COMPLETED)
+  details       PurchaseDetail[]
+  createdAt     DateTime        @default(now())
+  updatedAt     DateTime        @updatedAt
+
+  @@map("purchases")
+}
+
+model PurchaseDetail {
+  id          Int      @id @default(autoincrement())
+  purchaseId  Int
+  purchase    Purchase @relation(fields: [purchaseId], references: [id])
+  productId   Int
+  product     Product  @relation(fields: [productId], references: [id])
+  quantity    Int
+  price       Float
+  subtotal    Float
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@map("purchase_details")
+}
+
+model Supplier {
+  id          Int        @id @default(autoincrement())
+  name        String
+  ruc         String     @unique
+  address     String?
+  phone       String?
+  email       String?
+  purchases   Purchase[]
+  createdAt   DateTime   @default(now())
+  updatedAt   DateTime   @updatedAt
+
+  @@map("suppliers")
+}
+
+enum SaleStatus {
+  PENDING
+  COMPLETED
+  CANCELLED
+}
+
+enum PaymentMethod {
+  CASH
+  CARD
+  TRANSFER
+}
+
+enum Role {
+  ADMIN
+  SELLER
+}
+
+enum PurchaseStatus {
+  PENDING
+  COMPLETED
+  CANCELLED
+}
